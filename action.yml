@@ -135,6 +135,10 @@ inputs:
     description: "Show full JSON output from Droid Exec. WARNING: This outputs ALL Droid messages including tool execution results which may contain secrets, API keys, or other sensitive information. These logs are publicly visible in GitHub Actions. Only enable for debugging in non-sensitive environments."
     required: false
     default: "false"
+  upload_debug_artifacts:
+    description: "Upload ~/.factory and Droid prompt files for debugging. WARNING: these paths may contain credentials or sensitive repository content; keep disabled for secret-bearing workflows."
+    required: false
+    default: "false"
 
 outputs:
   github_token:
@@ -355,7 +359,9 @@ runs:
         AUTOMATIC_SECURITY_REVIEW: ${{ inputs.automatic_security_review }}
 
     - name: Collect .factory debug files
-      if: always() && steps.prepare.outputs.contains_trigger == 'true'
+      if: >-
+        always() && steps.prepare.outputs.contains_trigger == 'true' &&
+        inputs.upload_debug_artifacts == 'true'
       shell: bash
       run: |
         if [ -d "$HOME/.factory" ]; then
@@ -363,7 +369,9 @@ runs:
         fi
 
     - name: Upload debug artifacts
-      if: always() && steps.prepare.outputs.contains_trigger == 'true'
+      if: >-
+        always() && steps.prepare.outputs.contains_trigger == 'true' &&
+        inputs.upload_debug_artifacts == 'true'
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: droid-review-debug-${{ github.run_id }}
