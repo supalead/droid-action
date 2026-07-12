@@ -7,7 +7,7 @@ const action = readFileSync(join(import.meta.dir, "..", "action.yml"), "utf8");
 describe("validator token wiring", () => {
   test("reuses the effective token without a second OIDC exchange", () => {
     const prepareValidatorStep = action.match(
-      /- name: Prepare validator[\s\S]*?(?=\n    - name: Run Droid Exec \(validator\))/,
+      /- name: Prepare validator[\s\S]*?(?=\n    - name:)/,
     )?.[0];
 
     expect(prepareValidatorStep).toBeDefined();
