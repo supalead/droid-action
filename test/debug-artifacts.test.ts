@@ -11,7 +11,7 @@ describe("debug artifact safety", () => {
     );
 
     const guardedSteps =
-      action.match(/inputs\.upload_debug_artifacts == 'true'/g) ?? [];
+      action.match(/inputs\.upload_debug_artifacts\s*==\s*['"]true['"]/g) ?? [];
     expect(guardedSteps).toHaveLength(2);
   });
 });
