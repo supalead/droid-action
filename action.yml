@@ -301,6 +301,7 @@ runs:
         bun run ${GITHUB_ACTION_PATH}/src/entrypoints/prepare-validator.ts
       env:
         GITHUB_TOKEN: ${{ steps.prepare.outputs.github_token }}
+        OVERRIDE_GITHUB_TOKEN: ${{ steps.prepare.outputs.github_token }}
         REVIEW_VALIDATED_PATH: ${{ inputs.review_validated_path }}
         REVIEW_CANDIDATES_PATH: ${{ inputs.review_candidates_path }}
         DROID_COMMENT_ID: ${{ steps.prepare.outputs.droid_comment_id }}
