@@ -133,13 +133,14 @@ export async function prepareSecurityReviewMode({
 
   const candidateGenerationTools = ["Task", "FetchUrl", "Skill"];
 
-  const safeUserAllowedMCPTools = userAllowedMCPTools.filter(
-    (tool) =>
-      (!artifactOnly && tool === "github_comment___update_droid_comment") ||
-      (!tool.startsWith("github_pr___") &&
-        !tool.startsWith("github_comment___") &&
-        tool !== "github_inline_comment___create_inline_comment"),
-  );
+  const safeUserAllowedMCPTools = artifactOnly
+    ? []
+    : userAllowedMCPTools.filter(
+        (tool) =>
+          tool === "github_comment___update_droid_comment" ||
+          (!tool.startsWith("github_pr___") &&
+            tool !== "github_inline_comment___create_inline_comment"),
+      );
 
   const allowedTools = Array.from(
     new Set([

@@ -250,7 +250,7 @@ describe("prepareReviewMode", () => {
 
   it("keeps artifact generation local in artifact-only delivery", async () => {
     process.env.DROID_ARGS =
-      '--enabled-tools "github_comment___update_droid_comment,github_pr___submit_review"';
+      '--enabled-tools "github_comment___update_droid_comment,github_pr___submit_review,github___create_or_update_file"';
     const context = createMockContext({
       eventName: "pull_request",
       isPR: true,
@@ -298,6 +298,9 @@ describe("prepareReviewMode", () => {
       "github_comment___update_droid_comment",
     );
     expect(mcpCall?.allowedTools).not.toContain("github_pr___submit_review");
+    expect(mcpCall?.allowedTools).not.toContain(
+      "github___create_or_update_file",
+    );
     const droidArgsCall = setOutputSpy.mock.calls.find(
       (call: unknown[]) => call[0] === "droid_args",
     ) as [string, string] | undefined;
@@ -305,6 +308,7 @@ describe("prepareReviewMode", () => {
       "github_comment___update_droid_comment",
     );
     expect(droidArgsCall?.[1]).not.toContain("github_pr___submit_review");
+    expect(droidArgsCall?.[1]).not.toContain("github___create_or_update_file");
     expect(
       setOutputSpy.mock.calls.some(
         (call: unknown[]) => call[0] === "droid_comment_id",
@@ -314,7 +318,7 @@ describe("prepareReviewMode", () => {
 
   it("validates into JSON without publisher tools in artifact-only delivery", async () => {
     process.env.DROID_ARGS =
-      '--enabled-tools "github_comment___update_droid_comment,github_pr___submit_review"';
+      '--enabled-tools "github_comment___update_droid_comment,github_pr___submit_review,github___create_or_update_file"';
     const context = createMockContext({
       eventName: "pull_request",
       isPR: true,
@@ -356,6 +360,9 @@ describe("prepareReviewMode", () => {
       "github_comment___update_droid_comment",
     );
     expect(mcpCall?.allowedTools).not.toContain("github_pr___submit_review");
+    expect(mcpCall?.allowedTools).not.toContain(
+      "github___create_or_update_file",
+    );
     const droidArgsCall = setOutputSpy.mock.calls.find(
       (call: unknown[]) => call[0] === "droid_args",
     ) as [string, string] | undefined;
@@ -363,6 +370,7 @@ describe("prepareReviewMode", () => {
       "github_comment___update_droid_comment",
     );
     expect(droidArgsCall?.[1]).not.toContain("github_pr___submit_review");
+    expect(droidArgsCall?.[1]).not.toContain("github___create_or_update_file");
     expect(
       setOutputSpy.mock.calls.some(
         (call: unknown[]) => call[0] === "droid_comment_id",

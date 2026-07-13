@@ -95,14 +95,7 @@ export async function prepareReviewValidatorMode({
 
   const validatorTools = artifactOnly ? [] : ["github_pr___submit_review"];
 
-  const safeUserAllowedMCPTools = artifactOnly
-    ? userAllowedMCPTools.filter(
-        (tool) =>
-          !tool.startsWith("github_pr___") &&
-          !tool.startsWith("github_comment___") &&
-          !tool.startsWith("github_inline_comment___"),
-      )
-    : userAllowedMCPTools;
+  const safeUserAllowedMCPTools = artifactOnly ? [] : userAllowedMCPTools;
 
   const allowedTools = Array.from(
     new Set([...baseTools, ...validatorTools, ...safeUserAllowedMCPTools]),
