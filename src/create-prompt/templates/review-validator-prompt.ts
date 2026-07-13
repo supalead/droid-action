@@ -43,5 +43,6 @@ export function generateReviewValidatorPrompt(
       "$RUNNER_TEMP/droid-prompts/review_validated.json",
     includeSuggestions: context.includeSuggestions !== false,
     securityReviewEnabled: process.env.SECURITY_REVIEW_ENABLED === "true",
+    reviewDelivery: context.githubContext?.inputs.reviewDelivery ?? "direct",
   });
 }

@@ -27,6 +27,7 @@ describe("prepareContext", () => {
       trackProgress: false,
       automaticReview: false,
       automaticSecurityReview: false,
+      reviewDelivery: "direct",
       securityModel: "",
       securitySeverityThreshold: "medium",
       securityBlockOnCritical: true,
@@ -115,6 +116,11 @@ describe("buildAllowedToolsString", () => {
   test("adds CI tools when requested", () => {
     const result = buildAllowedToolsString([], true);
     expect(result).toContain("github_ci___get_ci_status");
+  });
+
+  test("can omit the tracking mutation tool", () => {
+    const result = buildAllowedToolsString([], false, false);
+    expect(result).not.toContain("github_comment___update_droid_comment");
   });
 });
 

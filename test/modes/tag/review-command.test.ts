@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import * as core from "@actions/core";
 import { prepareReviewMode } from "../../../src/tag/commands/review";
+import { prepareReviewValidatorMode } from "../../../src/tag/commands/review-validator";
 import { createMockContext } from "../../mockContext";
 
 import * as promptModule from "../../../src/create-prompt";
@@ -245,6 +246,173 @@ describe("prepareReviewMode", () => {
 
     expect(createInitialSpy).toHaveBeenCalled();
     expect(result.commentId).toBe(777);
+  });
+
+  it("keeps artifact generation local in artifact-only delivery", async () => {
+    process.env.DROID_ARGS =
+      '--enabled-tools "github_comment___update_droid_comment,github_pr___submit_review,github___create_or_update_file"';
+    const context = createMockContext({
+      eventName: "pull_request",
+      isPR: true,
+      payload: { pull_request: { number: 25 } } as any,
+      entityNumber: 25,
+      inputs: {
+        automaticReview: true,
+        reviewDelivery: "artifact-only",
+      },
+    });
+    const octokit = {
+      rest: {
+        issues: { listComments: () => Promise.resolve({ data: [] }) },
+        pulls: { listReviewComments: () => Promise.resolve({ data: [] }) },
+      },
+      graphql: () => Promise.resolve({}),
+    } as any;
+    graphqlSpy = spyOn(octokit, "graphql").mockResolvedValue({
+      repository: {
+        pullRequest: {
+          baseRefName: MOCK_PR_DATA.baseRefName,
+          headRefName: MOCK_PR_DATA.headRefName,
+          headRefOid: MOCK_PR_DATA.headRefOid,
+          title: MOCK_PR_DATA.title,
+          body: MOCK_PR_DATA.body,
+        },
+      },
+    });
+
+    const result = await prepareReviewMode({
+      context,
+      octokit,
+      githubToken: "model-runner-token",
+    });
+
+    expect(createInitialSpy).not.toHaveBeenCalled();
+    expect(result.commentId).toBeUndefined();
+    expect(promptSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ includeTrackingTool: false }),
+    );
+    const mcpCall = mcpSpy.mock.calls[0]?.[0];
+    expect(mcpCall?.githubToken).toBe("model-runner-token");
+    expect(mcpCall?.droidCommentId).toBeUndefined();
+    expect(mcpCall?.allowedTools).not.toContain(
+      "github_comment___update_droid_comment",
+    );
+    expect(mcpCall?.allowedTools).not.toContain("github_pr___submit_review");
+    expect(mcpCall?.allowedTools).not.toContain(
+      "github___create_or_update_file",
+    );
+    const droidArgsCall = setOutputSpy.mock.calls.find(
+      (call: unknown[]) => call[0] === "droid_args",
+    ) as [string, string] | undefined;
+    expect(droidArgsCall?.[1]).not.toContain(
+      "github_comment___update_droid_comment",
+    );
+    expect(droidArgsCall?.[1]).not.toContain("github_pr___submit_review");
+    expect(droidArgsCall?.[1]).not.toContain("github___create_or_update_file");
+    expect(
+      setOutputSpy.mock.calls.some(
+        (call: unknown[]) => call[0] === "droid_comment_id",
+      ),
+    ).toBe(false);
+  });
+
+  it("validates into JSON without publisher tools in artifact-only delivery", async () => {
+    process.env.DROID_ARGS =
+      '--enabled-tools "github_comment___update_droid_comment,github_pr___submit_review,github___create_or_update_file"';
+    const context = createMockContext({
+      eventName: "pull_request",
+      isPR: true,
+      payload: { pull_request: { number: 26 } } as any,
+      entityNumber: 26,
+      inputs: {
+        automaticReview: true,
+        reviewDelivery: "artifact-only",
+      },
+    });
+    const octokit = { rest: {}, graphql: () => Promise.resolve({}) } as any;
+    graphqlSpy = spyOn(octokit, "graphql").mockResolvedValue({
+      repository: {
+        pullRequest: {
+          baseRefName: MOCK_PR_DATA.baseRefName,
+          headRefName: MOCK_PR_DATA.headRefName,
+          headRefOid: MOCK_PR_DATA.headRefOid,
+          title: MOCK_PR_DATA.title,
+          body: MOCK_PR_DATA.body,
+        },
+      },
+    });
+
+    const result = await prepareReviewValidatorMode({
+      context,
+      octokit,
+      githubToken: "model-runner-token",
+      trackingCommentId: 999,
+    });
+
+    expect(result.commentId).toBeUndefined();
+    expect(promptSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ includeTrackingTool: false }),
+    );
+    const mcpCall = mcpSpy.mock.calls[0]?.[0];
+    expect(mcpCall?.githubToken).toBe("model-runner-token");
+    expect(mcpCall?.droidCommentId).toBeUndefined();
+    expect(mcpCall?.allowedTools).not.toContain(
+      "github_comment___update_droid_comment",
+    );
+    expect(mcpCall?.allowedTools).not.toContain("github_pr___submit_review");
+    expect(mcpCall?.allowedTools).not.toContain(
+      "github___create_or_update_file",
+    );
+    const droidArgsCall = setOutputSpy.mock.calls.find(
+      (call: unknown[]) => call[0] === "droid_args",
+    ) as [string, string] | undefined;
+    expect(droidArgsCall?.[1]).not.toContain(
+      "github_comment___update_droid_comment",
+    );
+    expect(droidArgsCall?.[1]).not.toContain("github_pr___submit_review");
+    expect(droidArgsCall?.[1]).not.toContain("github___create_or_update_file");
+    expect(
+      setOutputSpy.mock.calls.some(
+        (call: unknown[]) => call[0] === "droid_comment_id",
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps direct validator publishing backward compatible", async () => {
+    const context = createMockContext({
+      eventName: "pull_request",
+      isPR: true,
+      payload: { pull_request: { number: 27 } } as any,
+      entityNumber: 27,
+    });
+    const octokit = { rest: {}, graphql: () => Promise.resolve({}) } as any;
+    graphqlSpy = spyOn(octokit, "graphql").mockResolvedValue({
+      repository: {
+        pullRequest: {
+          baseRefName: MOCK_PR_DATA.baseRefName,
+          headRefName: MOCK_PR_DATA.headRefName,
+          headRefOid: MOCK_PR_DATA.headRefOid,
+          title: MOCK_PR_DATA.title,
+          body: MOCK_PR_DATA.body,
+        },
+      },
+    });
+
+    const result = await prepareReviewValidatorMode({
+      context,
+      octokit,
+      githubToken: "direct-token",
+      trackingCommentId: 1000,
+    });
+
+    expect(result.commentId).toBe(1000);
+    const mcpCall = mcpSpy.mock.calls[0]?.[0];
+    expect(mcpCall?.allowedTools).toContain(
+      "github_comment___update_droid_comment",
+    );
+    expect(mcpCall?.allowedTools).toContain("github_pr___submit_review");
+    expect(mcpCall?.droidCommentId).toBe("1000");
+    expect(setOutputSpy).toHaveBeenCalledWith("droid_comment_id", "1000");
   });
 
   it("throws when invoked on non-PR context", async () => {

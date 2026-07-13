@@ -5,6 +5,7 @@ import { setupGitHubToken } from "../github/token";
 import { createOctokit } from "../github/api/client";
 import { parseGitHubContext, isEntityContext } from "../github/context";
 import { prepareReviewValidatorMode } from "../tag/commands/review-validator";
+import { isArtifactOnlyDelivery } from "../core/review/delivery";
 
 async function run() {
   try {
@@ -17,8 +18,14 @@ async function run() {
     const githubToken = await setupGitHubToken();
     const octokit = createOctokit(githubToken);
 
-    const trackingCommentId = Number(process.env.DROID_COMMENT_ID);
-    if (!trackingCommentId || Number.isNaN(trackingCommentId)) {
+    const rawTrackingCommentId = process.env.DROID_COMMENT_ID;
+    const trackingCommentId = rawTrackingCommentId
+      ? Number(rawTrackingCommentId)
+      : undefined;
+    if (
+      !isArtifactOnlyDelivery(context.inputs.reviewDelivery) &&
+      (!trackingCommentId || Number.isNaN(trackingCommentId))
+    ) {
       throw new Error("DROID_COMMENT_ID is required for validator run");
     }
 

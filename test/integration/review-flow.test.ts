@@ -168,6 +168,54 @@ describe("review command integration", () => {
     expect(runSecurityReviewCall?.[1]).toBe("false");
   });
 
+  it("does not create a GitHub tracking comment for automatic artifact-only review", async () => {
+    const context = createMockContext({
+      eventName: "pull_request",
+      isPR: true,
+      actor: "human-reviewer",
+      entityNumber: 8,
+      inputs: {
+        automaticReview: true,
+        reviewDelivery: "artifact-only",
+      },
+      payload: {
+        pull_request: {
+          number: 8,
+          user: { login: "author" },
+        },
+      } as any,
+    });
+    const octokit = {
+      rest: {
+        issues: { listComments: () => Promise.resolve({ data: [] }) },
+        pulls: { listReviewComments: () => Promise.resolve({ data: [] }) },
+      },
+      graphql: () => Promise.resolve({}),
+    } as any;
+    graphqlSpy = spyOn(octokit, "graphql").mockResolvedValue({
+      repository: {
+        pullRequest: {
+          baseRefName: "main",
+          headRefName: "feature/review",
+          headRefOid: "def456",
+          title: "Artifact review",
+          body: "",
+        },
+      },
+    });
+
+    const result = await prepareTagExecution({
+      context,
+      octokit,
+      githubToken: "model-runner-token",
+    });
+
+    expect(createCommentSpy).not.toHaveBeenCalled();
+    expect(result.commentId).toBeUndefined();
+    expect(promptSpy).toHaveBeenCalled();
+    expect(computeArtifactsSpy).toHaveBeenCalled();
+  });
+
   it("sets security flag only for @droid security", async () => {
     const context = createMockContext({
       eventName: "issue_comment",

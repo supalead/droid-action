@@ -11,6 +11,7 @@ import { prepareSecurityScanMode } from "./commands/security-scan";
 import type { GitHubContext } from "../github/context";
 import type { PrepareResult } from "../prepare/types";
 import type { Octokits } from "../github/api/client";
+import { isArtifactOnlyDelivery } from "../core/review/delivery";
 
 const DROID_APP_BOT_ID = 209825114;
 const SECURITY_REVIEW_MARKER = "## Security Review Summary";
@@ -90,6 +91,16 @@ export async function prepareTagExecution({
 
   const commandContext = extractCommandFromContext(context);
 
+  const isReviewExecution =
+    context.inputs.automaticReview ||
+    context.inputs.automaticSecurityReview ||
+    commandContext?.command === "security" ||
+    commandContext?.command === "review" ||
+    commandContext?.command === "default" ||
+    !commandContext;
+  const artifactOnlyReview =
+    isReviewExecution && isArtifactOnlyDelivery(context.inputs.reviewDelivery);
+
   // Determine comment type based on what's being run
   const isDualReview =
     context.inputs.automaticReview && context.inputs.automaticSecurityReview;
@@ -105,12 +116,15 @@ export async function prepareTagExecution({
       ? "security"
       : "default";
 
-  const commentData = await createInitialComment(
-    octokit.rest,
-    context,
-    commentType,
-  );
-  const commentId = commentData.id;
+  const commentId = artifactOnlyReview
+    ? undefined
+    : (await createInitialComment(octokit.rest, context, commentType)).id;
+
+  if (artifactOnlyReview) {
+    console.log(
+      "Artifact-only review delivery enabled; skipping initial GitHub tracking comment",
+    );
+  }
 
   // Handle when both automatic review flags are set
   if (

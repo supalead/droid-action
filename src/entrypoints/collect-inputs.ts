@@ -26,6 +26,7 @@ export function collectActionInputsPresence(): void {
     experimental_allowed_domains: "",
     track_progress: "false",
     automatic_review: "false",
+    review_delivery: "direct",
     automatic_security_review: "false",
     security_model: "",
     security_severity_threshold: "medium",

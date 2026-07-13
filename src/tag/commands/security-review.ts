@@ -6,11 +6,16 @@ import { computeReviewArtifacts } from "../../github/data/review-artifacts";
 import { createPrompt } from "../../create-prompt";
 import { prepareMcpTools } from "../../mcp/install-mcp-server";
 import { createInitialComment } from "../../github/operations/comments/create-initial";
-import { normalizeDroidArgs, parseAllowedTools } from "../../utils/parse-tools";
+import {
+  normalizeDroidArgs,
+  parseAllowedTools,
+  stripAllowedToolsArg,
+} from "../../utils/parse-tools";
 import { isEntityContext } from "../../github/context";
 import { generateSecurityCandidatesPrompt } from "../../create-prompt/templates/security-review-prompt";
 import type { Octokits } from "../../github/api/client";
 import type { PrepareResult } from "../../prepare/types";
+import { isArtifactOnlyDelivery } from "../../core/review/delivery";
 
 type SecurityReviewCommandOptions = {
   context: GitHubContext;
@@ -35,8 +40,11 @@ export async function prepareSecurityReviewMode({
     );
   }
 
-  const commentId =
-    trackingCommentId ?? (await createInitialComment(octokit.rest, context)).id;
+  const artifactOnly = isArtifactOnlyDelivery(context.inputs.reviewDelivery);
+  const commentId = artifactOnly
+    ? undefined
+    : (trackingCommentId ??
+      (await createInitialComment(octokit.rest, context)).id);
 
   const prData = await fetchPRBranchData({
     octokits: octokit,
@@ -96,6 +104,7 @@ export async function prepareSecurityReviewMode({
     },
     generatePrompt: generateSecurityCandidatesPrompt,
     reviewArtifacts,
+    includeTrackingTool: !artifactOnly,
   });
   core.exportVariable("DROID_EXEC_RUN_TYPE", "droid-security-review");
 
@@ -103,6 +112,9 @@ export async function prepareSecurityReviewMode({
 
   const rawUserArgs = process.env.DROID_ARGS || "";
   const normalizedUserArgs = normalizeDroidArgs(rawUserArgs);
+  const passthroughUserArgs = artifactOnly
+    ? stripAllowedToolsArg(normalizedUserArgs)
+    : normalizedUserArgs;
   const userAllowedMCPTools = parseAllowedTools(normalizedUserArgs).filter(
     (tool) => tool.startsWith("github_") && tool.includes("___"),
   );
@@ -116,17 +128,19 @@ export async function prepareSecurityReviewMode({
     "Edit",
     "Create",
     "ApplyPatch",
-    "github_comment___update_droid_comment",
+    ...(!artifactOnly ? ["github_comment___update_droid_comment"] : []),
   ];
 
   const candidateGenerationTools = ["Task", "FetchUrl", "Skill"];
 
-  const safeUserAllowedMCPTools = userAllowedMCPTools.filter(
-    (tool) =>
-      tool === "github_comment___update_droid_comment" ||
-      (!tool.startsWith("github_pr___") &&
-        tool !== "github_inline_comment___create_inline_comment"),
-  );
+  const safeUserAllowedMCPTools = artifactOnly
+    ? []
+    : userAllowedMCPTools.filter(
+        (tool) =>
+          tool === "github_comment___update_droid_comment" ||
+          (!tool.startsWith("github_pr___") &&
+            tool !== "github_inline_comment___create_inline_comment"),
+      );
 
   const allowedTools = Array.from(
     new Set([
@@ -140,7 +154,7 @@ export async function prepareSecurityReviewMode({
     githubToken,
     owner: context.repository.owner,
     repo: context.repository.repo,
-    droidCommentId: commentId.toString(),
+    droidCommentId: commentId?.toString(),
     allowedTools,
     mode: "tag",
     context,
@@ -156,14 +170,16 @@ export async function prepareSecurityReviewMode({
     droidArgParts.push(`--model "${securityModel}"`);
   }
 
-  if (normalizedUserArgs) {
-    droidArgParts.push(normalizedUserArgs);
+  if (passthroughUserArgs) {
+    droidArgParts.push(passthroughUserArgs);
   }
 
   core.setOutput("droid_args", droidArgParts.join(" ").trim());
   core.setOutput("mcp_tools", mcpTools);
   core.setOutput("review_pr_number", context.entityNumber.toString());
-  core.setOutput("droid_comment_id", commentId.toString());
+  if (commentId !== undefined) {
+    core.setOutput("droid_comment_id", commentId.toString());
+  }
 
   return {
     commentId,

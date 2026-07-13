@@ -38,9 +38,12 @@ const BASE_ALLOWED_TOOLS = [
 export function buildAllowedToolsString(
   customAllowedTools: string[] = [],
   includeActionsTools: boolean = false,
+  includeTrackingTool: boolean = true,
 ): string {
   const tools = new Set<string>(BASE_ALLOWED_TOOLS);
-  tools.add("github_comment___update_droid_comment");
+  if (includeTrackingTool) {
+    tools.add("github_comment___update_droid_comment");
+  }
 
   if (includeActionsTools) {
     tools.add("github_ci___get_ci_status");
@@ -305,6 +308,7 @@ export type PromptCreationOptions = {
   reviewArtifacts?: ReviewArtifacts;
   outputFilePath?: string;
   includeSuggestions?: boolean;
+  includeTrackingTool?: boolean;
 };
 
 export async function createPrompt({
@@ -320,6 +324,7 @@ export async function createPrompt({
   reviewArtifacts,
   outputFilePath,
   includeSuggestions,
+  includeTrackingTool = true,
 }: PromptCreationOptions) {
   try {
     const droidCommentId = commentId?.toString();
@@ -358,6 +363,7 @@ export async function createPrompt({
     const allowedToolsString = buildAllowedToolsString(
       allowedTools,
       includeActionsTools,
+      includeTrackingTool,
     );
     const disallowedToolsString = buildDisallowedToolsString(
       disallowedTools,

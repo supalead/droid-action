@@ -15,4 +15,22 @@ describe("validator token wiring", () => {
       "OVERRIDE_GITHUB_TOKEN: ${{ steps.prepare.outputs.github_token }}",
     );
   });
+
+  test("threads review delivery through both prepare passes", () => {
+    expect(action).toContain("review_delivery:");
+    expect(action).toMatch(/review_delivery:[\s\S]*?default: "direct"/);
+    const prepareStep = action.match(
+      /- name: Prepare action[\s\S]*?(?=\n    - name:)/,
+    )?.[0];
+    const prepareValidatorStep = action.match(
+      /- name: Prepare validator[\s\S]*?(?=\n    - name:)/,
+    )?.[0];
+
+    expect(prepareStep).toContain(
+      "REVIEW_DELIVERY: ${{ inputs.review_delivery }}",
+    );
+    expect(prepareValidatorStep).toContain(
+      "REVIEW_DELIVERY: ${{ inputs.review_delivery }}",
+    );
+  });
 });

@@ -8,6 +8,10 @@ import type {
   PullRequestReviewCommentEvent,
   WorkflowRunEvent,
 } from "@octokit/webhooks-types";
+import {
+  parseReviewDelivery,
+  type ReviewDelivery,
+} from "../core/review/delivery";
 
 // Custom types for GitHub Actions events that aren't webhooks
 export type WorkflowDispatchEvent = {
@@ -91,6 +95,7 @@ type BaseContext = {
     trackProgress: boolean;
     automaticReview: boolean;
     automaticSecurityReview: boolean;
+    reviewDelivery: ReviewDelivery;
     securityModel: string;
     securitySeverityThreshold: string;
     securityBlockOnCritical: boolean;
@@ -149,6 +154,7 @@ export function parseGitHubContext(): GitHubContext {
       trackProgress: process.env.TRACK_PROGRESS === "true",
       automaticReview: process.env.AUTOMATIC_REVIEW === "true",
       automaticSecurityReview: process.env.AUTOMATIC_SECURITY_REVIEW === "true",
+      reviewDelivery: parseReviewDelivery(process.env.REVIEW_DELIVERY),
       securityModel: process.env.SECURITY_MODEL ?? "",
       securitySeverityThreshold:
         process.env.SECURITY_SEVERITY_THRESHOLD ?? "medium",
