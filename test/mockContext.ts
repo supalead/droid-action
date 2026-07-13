@@ -20,6 +20,7 @@ const defaultInputs = {
   trackProgress: false,
   automaticReview: false,
   automaticSecurityReview: false,
+  reviewDelivery: "direct" as const,
   securityModel: "",
   securitySeverityThreshold: "medium",
   securityBlockOnCritical: true,

@@ -4,7 +4,7 @@
  */
 
 const ALLOWED_FLAG_PATTERN =
-  /--(?:(?:allowedTools|allowed-tools|enabled-tools|enabledTools))\s+(?:"([^"]+)"|'([^']+)'|([^\s]+))/;
+  /--(?:(?:allowedTools|allowed-tools|enabled-tools|enabledTools))(?:\s+|=)(?:"([^"]+)"|'([^']+)'|([^\s]+))/;
 
 export function parseAllowedTools(args: string): string[] {
   if (!args) {
@@ -45,4 +45,14 @@ export function normalizeDroidArgs(args: string): string {
       .replace(/--mcp-config\s+(?:"[^"]*"|'[^']*'|[^\s]+)/g, "")
       .trim()
   );
+}
+
+export function stripAllowedToolsArg(args: string): string {
+  if (!args) {
+    return "";
+  }
+
+  return args
+    .replace(/--enabled-tools(?:\s+|=)(?:"[^"]*"|'[^']*'|[^\s]+)/g, "")
+    .trim();
 }

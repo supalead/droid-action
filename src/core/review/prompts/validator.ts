@@ -8,8 +8,10 @@
  * and `src/gitlab/prompts/validator.ts` (GitLab) delegate to this builder
  * via thin adapters that supply a `ReviewTerminology` shape.
  *
- * Pass 2 is the only place where the posting tool is exposed (via
- * `--enabled-tools` on the second `droid exec` invocation).
+ * In direct delivery, Pass 2 is the only place where the posting tool is
+ * exposed (via `--enabled-tools` on the second `droid exec` invocation).
+ * Artifact-only delivery writes the same validated JSON without exposing any
+ * built-in publisher tool.
  */
 
 import type { ReviewPromptContext } from "./types";
@@ -28,6 +30,7 @@ export function generateValidatorPrompt(ctx: ReviewPromptContext): string {
     candidatesPath,
     validatedPath,
     includeSuggestions,
+    reviewDelivery = "direct",
   } = ctx;
 
   if (!validatedPath) {
@@ -41,6 +44,36 @@ export function generateValidatorPrompt(ctx: ReviewPromptContext): string {
   const securityBadgeLine = t.securityBadgeInstruction
     ? `\n* ${t.securityBadgeInstruction}`
     : "";
+
+  const deliveryInstructions =
+    reviewDelivery === "artifact-only"
+      ? `### Artifact-only delivery
+
+After writing \`${validatedPath}\`, stop. The validated JSON file is the **sole output** of this pass.
+
+* Do **NOT** invoke \`${t.submitReviewToolName}\`.
+* Do **NOT** invoke \`${t.updateTrackingToolName}\`.
+* Do **NOT** post, update, delete, minimize, reply to, or resolve any ${t.platformName} review or comment.
+* A separate trusted publisher will validate and deliver the artifact.`
+      : `### Post approved items
+
+After writing \`${validatedPath}\`, post comments ONLY for \`status === "approved"\`:
+
+* Collect all approved comments and submit them as a **single batched review** via \`${t.submitReviewToolName}\`, passing them in the \`comments\` array parameter${t.submitReviewExtraArg}.
+* Do **NOT** post comments individually — batch them all into one \`submit_review\` call.
+* Do **NOT** include a \`body\` parameter in \`submit_review\`${t.submitReviewBodyExclusionTrailer}.
+* Use \`${t.updateTrackingToolName}\` to update the ${t.trackingCommentName} with the review summary.${securityBadgeLine}
+* Do **NOT** post the summary as a separate ${t.summaryEntityName}${t.summaryPostingExtraExclusion}.
+* ${t.approvalChangesNote}`;
+
+  const criticalRequirements =
+    reviewDelivery === "artifact-only"
+      ? `1. You MUST read and validate **every** candidate before writing the artifact.
+2. Preserve ordering: keep results in the same order as candidates.
+3. **Artifact rule (STRICT):** Record approved and rejected results in \`${validatedPath}\`, but do not publish either result.`
+      : `1. You MUST read and validate **every** candidate before posting anything.
+2. Preserve ordering: keep results in the same order as candidates.
+3. **Posting rule (STRICT):** Only post comments where \`status === "approved"\`. Never post rejected items.`;
 
   return `You are validating candidate review comments for ${t.entityNoun} ${t.entityNumberSigil}${entityNumber} in ${repoOrProject}.
 
@@ -68,9 +101,7 @@ If the diff is large, read in chunks (offset/limit). **Do not proceed until you 
 
 ### Critical Requirements
 
-1. You MUST read and validate **every** candidate before posting anything.
-2. Preserve ordering: keep results in the same order as candidates.
-3. **Posting rule (STRICT):** Only post comments where \`status === "approved"\`. Never post rejected items.
+${criticalRequirements}
 
 ### Output: Write \`${validatedPath}\`
 
@@ -124,15 +155,6 @@ Tooling note:
 * If the tools list includes \`ApplyPatch\` (common for OpenAI models like GPT-5.2), use \`ApplyPatch\` to create/update the file at the exact path.
 * Otherwise, use \`Create\` (or \`Edit\` if overwriting) to write the file.
 
-### Post approved items
-
-After writing \`${validatedPath}\`, post comments ONLY for \`status === "approved"\`:
-
-* Collect all approved comments and submit them as a **single batched review** via \`${t.submitReviewToolName}\`, passing them in the \`comments\` array parameter${t.submitReviewExtraArg}.
-* Do **NOT** post comments individually — batch them all into one \`submit_review\` call.
-* Do **NOT** include a \`body\` parameter in \`submit_review\`${t.submitReviewBodyExclusionTrailer}.
-* Use \`${t.updateTrackingToolName}\` to update the ${t.trackingCommentName} with the review summary.${securityBadgeLine}
-* Do **NOT** post the summary as a separate ${t.summaryEntityName}${t.summaryPostingExtraExclusion}.
-* ${t.approvalChangesNote}
+${deliveryInstructions}
 `;
 }

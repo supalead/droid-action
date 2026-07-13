@@ -59,6 +59,10 @@ inputs:
     description: "Automatically run the review flow for pull request contexts without requiring an explicit @droid review command. Only supported for PR-related events."
     required: false
     default: "false"
+  review_delivery:
+    description: "Review publishing mode: 'direct' posts tracking/review comments from this action; 'artifact-only' writes candidates/validated JSON with built-in GitHub review mutations disabled so a trusted downstream job can publish them."
+    required: false
+    default: "direct"
   automatic_security_review:
     description: "Automatically run the security review flow for pull request contexts without requiring an explicit @droid security command. Only supported for PR-related events."
     required: false
@@ -187,6 +191,7 @@ runs:
         DEFAULT_WORKFLOW_TOKEN: ${{ github.token }}
         TRACK_PROGRESS: ${{ inputs.track_progress }}
         AUTOMATIC_REVIEW: ${{ inputs.automatic_review }}
+        REVIEW_DELIVERY: ${{ inputs.review_delivery }}
         AUTOMATIC_SECURITY_REVIEW: ${{ inputs.automatic_security_review }}
         SECURITY_MODEL: ${{ inputs.security_model }}
         SECURITY_SEVERITY_THRESHOLD: ${{ inputs.security_severity_threshold }}
@@ -304,6 +309,7 @@ runs:
         OVERRIDE_GITHUB_TOKEN: ${{ steps.prepare.outputs.github_token }}
         REVIEW_VALIDATED_PATH: ${{ inputs.review_validated_path }}
         REVIEW_CANDIDATES_PATH: ${{ inputs.review_candidates_path }}
+        REVIEW_DELIVERY: ${{ inputs.review_delivery }}
         DROID_COMMENT_ID: ${{ steps.prepare.outputs.droid_comment_id }}
         REVIEW_DEPTH: ${{ inputs.review_depth }}
         REVIEW_MODEL: ${{ inputs.review_model }}

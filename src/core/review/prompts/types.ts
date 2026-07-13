@@ -1,3 +1,5 @@
+import type { ReviewDelivery } from "../delivery";
+
 /**
  * Shared types for the platform-agnostic review prompts.
  *
@@ -90,4 +92,6 @@ export interface ReviewPromptContext {
   includeSuggestions: boolean;
   /** Spawn security-reviewer subagent during Pass 1 (candidates only) */
   securityReviewEnabled: boolean;
+  /** Whether the validator posts directly or leaves a validated artifact for a downstream publisher. */
+  reviewDelivery?: ReviewDelivery;
 }

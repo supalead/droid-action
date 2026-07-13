@@ -251,13 +251,16 @@ jobs:
 
 ### Review Configuration
 
-| Input              | Default | Purpose                                                                                              |
-| ------------------ | ------- | ---------------------------------------------------------------------------------------------------- |
-| `automatic_review` | `false` | Automatically run code review on PRs without requiring `@droid review`.                              |
-| `review_depth`     | `deep`  | Review depth preset: `shallow` (fast) or `deep` (thorough). See [Review Depth](#review-depth) below. |
-| `review_model`     | `""`    | Override the model for code review. When empty, determined by `review_depth`.                        |
-| `reasoning_effort` | `""`    | Override reasoning effort for review. When empty, determined by `review_depth`.                      |
-| `fill_model`       | `""`    | Override the model used for PR description fill.                                                     |
+| Input              | Default  | Purpose                                                                                                                                                                                |
+| ------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `automatic_review` | `false`  | Automatically run code review on PRs without requiring `@droid review`.                                                                                                                |
+| `review_delivery`  | `direct` | `direct` posts tracking/review comments from this action. `artifact-only` writes candidates/validated JSON with built-in GitHub mutations disabled for a trusted downstream publisher. |
+| `review_depth`     | `deep`   | Review depth preset: `shallow` (fast) or `deep` (thorough). See [Review Depth](#review-depth) below.                                                                                   |
+| `review_model`     | `""`     | Override the model for code review. When empty, determined by `review_depth`.                                                                                                          |
+| `reasoning_effort` | `""`     | Override reasoning effort for review. When empty, determined by `review_depth`.                                                                                                        |
+| `fill_model`       | `""`     | Override the model used for PR description fill.                                                                                                                                       |
+
+`review_delivery: artifact-only` keeps authentication and model execution unchanged, but does not create or update a tracking comment and does not expose the built-in review submission tools to the validator. Give the model runner a read-only `github_token`; the action cannot reduce permissions on a caller-supplied token. The two JSON files configured by `review_candidates_path` and `review_validated_path` remain available on disk. Publish them only from a separate trusted job after validating their schema and binding them to the expected repository, PR, head SHA, and base ref.
 
 ### Review Depth
 

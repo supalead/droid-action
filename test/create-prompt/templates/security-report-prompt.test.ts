@@ -38,6 +38,7 @@ describe("generateSecurityReportPrompt", () => {
         trackProgress: false,
         automaticReview: false,
         automaticSecurityReview: false,
+        reviewDelivery: "direct",
         securityModel: "",
         securitySeverityThreshold: "high",
         securityBlockOnCritical: true,

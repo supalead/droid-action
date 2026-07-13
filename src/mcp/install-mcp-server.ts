@@ -84,22 +84,28 @@ export async function prepareMcpTools(
       tool.startsWith("github_pr___"),
     );
 
+    const hasGitHubCommentTools = allowedToolsList.some((tool) =>
+      tool.startsWith("github_comment___"),
+    );
+
     const baseMcpTools: { mcpServers: Record<string, unknown> } = {
       mcpServers: {},
     };
 
-    baseMcpTools.mcpServers.github_comment = {
-      command: "bun",
-      args: ["run", `${repoRoot}/src/mcp/github-comment-server.ts`],
-      env: {
-        GITHUB_TOKEN: githubToken,
-        REPO_OWNER: owner,
-        REPO_NAME: repo,
-        ...(droidCommentId && { DROID_COMMENT_ID: droidCommentId }),
-        GITHUB_EVENT_NAME: process.env.GITHUB_EVENT_NAME || "",
-        GITHUB_API_URL: GITHUB_API_URL,
-      },
-    };
+    if (hasGitHubCommentTools) {
+      baseMcpTools.mcpServers.github_comment = {
+        command: "bun",
+        args: ["run", `${repoRoot}/src/mcp/github-comment-server.ts`],
+        env: {
+          GITHUB_TOKEN: githubToken,
+          REPO_OWNER: owner,
+          REPO_NAME: repo,
+          ...(droidCommentId && { DROID_COMMENT_ID: droidCommentId }),
+          GITHUB_EVENT_NAME: process.env.GITHUB_EVENT_NAME || "",
+          GITHUB_API_URL: GITHUB_API_URL,
+        },
+      };
+    }
 
     // Include inline comment server for PRs when requested via allowed tools
     if (

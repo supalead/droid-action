@@ -69,6 +69,7 @@ describe("checkWritePermissions", () => {
       trackProgress: false,
       automaticReview: false,
       automaticSecurityReview: false,
+      reviewDelivery: "direct",
       securityModel: "",
       securitySeverityThreshold: "medium",
       securityBlockOnCritical: true,

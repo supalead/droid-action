@@ -81,6 +81,24 @@ describe("generateReviewValidatorPrompt", () => {
     );
   });
 
+  it("writes only the validated artifact for artifact-only delivery", () => {
+    const context = createBaseContext({
+      githubContext: {
+        inputs: { reviewDelivery: "artifact-only" },
+      } as any,
+    });
+    const prompt = generateReviewValidatorPrompt(context);
+
+    expect(prompt).toContain("Artifact-only delivery");
+    expect(prompt).toContain("sole output");
+    expect(prompt).toContain("Artifact rule (STRICT)");
+    expect(prompt).not.toContain("Posting rule (STRICT)");
+    expect(prompt).toContain("Do **NOT** invoke `github_pr___submit_review`");
+    expect(prompt).toContain(
+      "Do **NOT** invoke `github_comment___update_droid_comment`",
+    );
+  });
+
   it("includes correct PR context", () => {
     const context = createBaseContext({
       prBranchData: {

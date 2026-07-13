@@ -186,6 +186,47 @@ describe("prepareSecurityReviewMode", () => {
     expect(result.commentId).toBe(777);
   });
 
+  it("keeps automatic security review mutations out of artifact-only delivery", async () => {
+    process.env.DROID_ARGS =
+      '--enabled-tools "github_comment___update_droid_comment,github_pr___submit_review"';
+    const context = createMockContext({
+      eventName: "pull_request",
+      isPR: true,
+      payload: { pull_request: { number: 25 } } as any,
+      entityNumber: 25,
+      inputs: {
+        automaticSecurityReview: true,
+        reviewDelivery: "artifact-only",
+      },
+    });
+    const octokit = { rest: {}, graphql: () => {} } as any;
+
+    const result = await prepareSecurityReviewMode({
+      context,
+      octokit,
+      githubToken: "model-runner-token",
+    });
+
+    expect(createInitialSpy).not.toHaveBeenCalled();
+    expect(result.commentId).toBeUndefined();
+    expect(promptSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ includeTrackingTool: false }),
+    );
+    const mcpCall = mcpSpy.mock.calls[0]?.[0];
+    expect(mcpCall?.droidCommentId).toBeUndefined();
+    expect(mcpCall?.allowedTools).not.toContain(
+      "github_comment___update_droid_comment",
+    );
+    expect(mcpCall?.allowedTools).not.toContain("github_pr___submit_review");
+    const droidArgsCall = setOutputSpy.mock.calls.find(
+      (call: unknown[]) => call[0] === "droid_args",
+    ) as [string, string] | undefined;
+    expect(droidArgsCall?.[1]).not.toContain(
+      "github_comment___update_droid_comment",
+    );
+    expect(droidArgsCall?.[1]).not.toContain("github_pr___submit_review");
+  });
+
   it("throws when invoked on non-PR context", async () => {
     const context = createMockContext({ isPR: false });
 

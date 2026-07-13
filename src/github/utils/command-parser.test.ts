@@ -28,6 +28,7 @@ const baseContext: Omit<ParsedGitHubContext, "eventName" | "payload"> = {
     trackProgress: false,
     automaticReview: false,
     automaticSecurityReview: false,
+    reviewDelivery: "direct",
     securityModel: "",
     securitySeverityThreshold: "medium",
     securityBlockOnCritical: true,
