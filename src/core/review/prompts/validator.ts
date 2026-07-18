@@ -141,8 +141,9 @@ ${criticalRequirements}
     }
   ],
   "reviewSummary": {
+    "body": "1-3 sentence overall assessment",
     "status": "approved",
-    "body": "1-3 sentence overall assessment"
+    "verdict": "CLEAN"
   }
 }
 \`\`\`
@@ -150,6 +151,10 @@ ${criticalRequirements}
 Notes:
 * Use \`commit_id\` = \`${headSha}\`.
 * \`results\` MUST have exactly one entry per candidate, in the same order.
+* \`reviewSummary\` MUST have **exactly** these three keys — \`body\`, \`status\`, and \`verdict\`:
+  * \`body\`: 1-3 sentence overall assessment.
+  * \`status\`: always \`"approved"\`.
+  * \`verdict\`: Either \`"CLEAN"\` or \`"FINDINGS"\`. Set \`"CLEAN"\` ONLY when no actionable issue remains anywhere — there is **no** \`status === "approved"\` result AND you raised no concern in \`body\`. A summary-only concern described in \`body\` (with no approved inline comment) is still \`"FINDINGS"\`. Any new body-only issue you discover while re-reading the diff also makes the verdict \`"FINDINGS"\`.
 
 Tooling note:
 * If the tools list includes \`ApplyPatch\` (common for OpenAI models like GPT-5.2), use \`ApplyPatch\` to create/update the file at the exact path.
