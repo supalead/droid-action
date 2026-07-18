@@ -70,7 +70,8 @@ Write output to \`${reviewCandidatesPath}\` using this exact schema:
     }
   ],
   "reviewSummary": {
-    "body": "1-3 sentence security assessment"
+    "body": "1-3 sentence security assessment",
+    "verdict": "CLEAN"
   }
 }
 \`\`\`
@@ -93,8 +94,9 @@ Write output to \`${reviewCandidatesPath}\` using this exact schema:
   - \`side\`: "RIGHT" for new/modified code (default), "LEFT" only for removed code
   - \`commit_id\`: "${prHeadSha}"
 
-- **reviewSummary**:
+- **reviewSummary**: Object with **exactly** these two keys — \`body\` and \`verdict\`:
   - \`body\`: 1-3 sentence security assessment
+  - \`verdict\`: Either \`"CLEAN"\` or \`"FINDINGS"\`. Set \`"CLEAN"\` ONLY when there are no actionable security issues anywhere — the \`comments\` array is empty AND you raised no concern in \`body\`. If you describe **any** security issue only in \`body\` (a summary-only concern with no inline comment), the verdict MUST be \`"FINDINGS"\`. Any non-empty \`comments\` array is also \`"FINDINGS"\`.
 </schema_details>
 </output_spec>
 
